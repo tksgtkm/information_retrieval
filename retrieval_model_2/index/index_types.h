@@ -90,7 +90,7 @@ static inline offset decodeDocLevelTF(offset encode) {
 }
 
 // デフォルトのファイル権限
-static const mode_t DEFAULT_FILE_PERMISSONS = S_IWUSR | S_IRUSR | S_IRGRP;
+static const mode_t DEFAULT_FILE_PERMISSIONS = S_IWUSR | S_IRUSR | S_IRGRP;
 
 // デフォルトのディクトリ権限
 static const mode_t DEFAULT_DIRECTORY_PERMISSIONS = S_IWUSR | S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP;

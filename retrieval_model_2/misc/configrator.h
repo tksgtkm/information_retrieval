@@ -10,7 +10,7 @@
 #define configurable
 
 // configratorを初期化し、cmd-lineパラメータより与えられたデータを使う
-void initializeConfiguratorFromCommandLineParameters(int argc, char **argv);
+void initializeConfiguratorFromCommandLineParameters(int argc, const char **argv);
 
 // 2つのファイルで、コンフィグデータがあれば、config管理を初期化する
 void initializeConfigurator(const char *primaryFile, const char *secondaryFile);

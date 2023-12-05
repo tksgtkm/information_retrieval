@@ -128,7 +128,7 @@ static void processConfigFile(const char *fileName) {
   fclose(f);
 }
 
-void initializeConfiguratorFromCommandLineParameters(int argc, char **argv) {
+void initializeConfiguratorFromCommandLineParameters(int argc, const char **argv) {
   bool configFileGivenAsParam = false;
   initializeConfigurator("/dev/null", "/dev/null");
   for (int i = 1; i < argc; i++) {
