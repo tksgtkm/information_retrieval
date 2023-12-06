@@ -139,6 +139,20 @@ public:
   //  Counter used to give unique user IDs to Query instances using us
   int64_t registrationID;
 
+  // 更新処理(WRITE, UNLINK)を行った数をカウントする 
+  unsigned int updateOperationsPerformed;
+
+  // ガベージコレクションのトリガー
+  offset usedAddressSpace, deletedAddressSpace;
+
+  /*
+  その時点での最大のオフセット値
+  これはnotifyOfAddressSpaceChangeの操作が実際にポスティングを削除するか
+  単にインデックス作成プロセス中にアドレス空間の過剰割当を再調整するだけなのかを
+  判断するのに役立つ
+  */
+  offset biggestOffsetSeenSoFar;
+  
 public:
   // デフォルトコンストラクタ
   Index();
@@ -158,6 +172,12 @@ public:
 protected:
   // コンフィグマネージャーからコンフィグ情報を得る
   virtual void getConfiguration();
+
+  // メインのインデックスファイルから情報を読み取る
+  void loadDataFromDisk();
+
+  // データファイルにインデックス情報を書き込む
+  void saveDataToDisk();
 };
 
 #endif
