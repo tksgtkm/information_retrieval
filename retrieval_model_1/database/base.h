@@ -14,4 +14,8 @@
 
 typedef int RC;
 
+#define OK_RC 0
+
+#define START_PF_ERR -1
+
 #endif
