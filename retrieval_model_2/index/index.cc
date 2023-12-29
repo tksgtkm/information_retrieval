@@ -102,5 +102,92 @@ Index::Index(const char *directory, bool isSubIndex) {
   close(disallowFile);
   free(disallowFileName);
 
-  
+  uid_t uid = getuid();
+  uid_t euid = getuid();
+  if (uid != euid) {
+    log(LOG_ERROR, LOG_ID, "Index executable must not have the SBIT set.");
+    exit(1);
+  }
+  indexOwner = uid;
+
+  this->directory = duplicateString(directory);
+  char *fileName = evaluateRelativePathName(directory, INDEX_WORKFILE);
+
+  struct stat fileInfo;
+  if (lstat(fileName, &fileInfo) == 0) {
+    loadDataFromDisk();
+    if (!isConsistent) {
+      snprintf(errorMessage, sizeof(errorMessage),
+        "On-disk index found in inconsistent state: %s. Creating new index.", directory);
+      log(LOG_DEBUG, LOG_ID, errorMessage);
+      DIR *dir = opendir(directory);
+      struct dirent *child;
+      while ((child = readdir(dir)) != nullptr) {
+        if (child->d_name[0] == '.')
+          continue;
+        char *fn = evaluateRelativePathName(directory, child->d_name);
+        struct stat buf;
+        if (lstat(fn, &buf) == 0) {
+          /*
+          予防措置として、ファイル権限"-rw------"を持つファイルのみを削除する
+          これは別のプロセスなどで他の情報を含むディレクトリにインデックスを作成するときに
+          大量のファイルが削除されるのを回避させるため。
+          */
+          if ((buf.st_mode & 0777) == DEFAULT_FILE_PERMISSIONS) {
+            if ((S_ISLNK(buf.st_mode)) || (S_ISREG(buf.st_mode)) || (S_ISFIFO(buf.st_mode)))
+              unlink(fn);
+          }
+        }
+        free(fn);
+      }
+      closedir(dir);
+    }
+  }
 }
+
+void Index::loadDataFromDisk() {
+  char *fileName = evaluateRelativePathName(directory, INDEX_WORKFILE);
+  FILE *f = fopen(fileName, "r");
+  free(fileName);
+  if (f == nullptr) {
+    snprintf(errorMessage, sizeof(errorMessage), "Unable to open index: %s", fileName);
+    log(LOG_ERROR, LOG_ID, errorMessage);
+    exit(1);
+  }
+  char line[1024];
+  STEMMING_LEVEL = -1;
+  while (fgets(line, 1022, f) != nullptr) {
+    if (strlen(line) > 1) {
+      while (line[strlen(line) - 1] == '\n')
+        line[strlen(line) - 1] = 0;
+    }
+    if (startsWith(line, "STEMMING_LEVEL = "))
+      sscanf(&line[strlen("STEMMING_LEVEL = ")], "%d", &STEMMING_LEVEL);
+    if (startsWith(line, "BIGRAM_INDEXING = "))
+      BIGRAM_INDEXING = (strcasecmp(&line[strlen("BIGRAM_INDEXING = ")], "true") == 0);
+    if (startsWith(line, "UPDATE_OPERATIONS = "))
+      sscanf(&line[strlen("UPDATE_OPEERATIONS")], "%d", &updateOperationsPerformed);
+    if (startsWith(line, "IS_CONSISTENT = ")) {
+      if (strcasecmp(&line[strlen("IS_CONSISTENT = ")], "true") == 0)
+        isConsistent = true;
+      else if (strcasecmp(&line[strlen("IS_CONSISTENT = ")], "false") == 0)
+        isConsistent = false;
+    }
+    if (startsWith(line, "DOCUMENT_LEVEL_INDEXING = "))
+      sscanf(&line[strlen("DOCUMENT_LEVEL_INDEXING = ")], "%d", &DOCUMENT_LEVEL_INDEXING);
+    if (startsWith(line, "USED_ADDRESS_SPACE = "))
+      sscanf(&line[strlen("USED_ADDRESS_SPACE = ")], OFFSET_FORMAT, &usedAddressSpace);
+    if (startsWith(line, "DELETED_ADDRESS_SPACE = "))
+      sscanf(&line[strlen("DELETED_ADDRESS_SPACE = ")], OFFSET_FORMAT, &deletedAddressSpace);
+    if (startsWith(line, "BIGGEST_OFFSET = "))
+      sscanf(&line[strlen("BIGGEST_OFFSET = ")], OFFSET_FORMAT, &biggestOffsetSeenSoFar);
+  }
+
+  if ((STEMMING_LEVEL < 0) || (STEMMING_LEVEL > 3)) {
+    snprintf(errorMessage, sizeof(errorMessage), "Illegal confoguration value in index file: %s", directory);
+    log(LOG_ERROR, LOG_ID, errorMessage);
+    exit(1);
+  }
+  fclose(f);
+}
+
