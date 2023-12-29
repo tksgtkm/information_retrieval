@@ -8,6 +8,22 @@ typedef int PageNum;
 
 const int PF_PAGE_SIZE = 4096 - sizeof(int);
 
+class PF_PageHandle {
+  friend class PF_FileHandle;
+public:
+  PF_PageHandle();
+  ~PF_PageHandle();
+  PF_PageHandle(const PF_PageHandle &pageHandle);
+  PF_PageHandle& operator=(const PF_PageHandle &paggeHandle);
+
+  RC GetData(char *&pData) const;
+  RC GetPageNum(PageNum &pageNum) const;
+
+private:
+  int pageNum;
+  char *pPageData;
+};
+
 struct PF_FileHdr {
   int firstFree;
   char *numPages;
