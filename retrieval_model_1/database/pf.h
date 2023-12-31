@@ -36,6 +36,34 @@ class PF_FileHandle {
 public:
   PF_FileHandle();
   ~PF_FileHandle();
+
+  PF_FileHandle (const PF_FileHandle &fileHandle);
+
+  PF_FileHandle& operator=(const PF_FileHandle &fileHandle);
+
+  RC GetFirstPage(PF_PageHandle &pageHandle) const;
+  RC GetNextPage(PageNum current, PF_PageHandle &pageHandle) const;
+  RC GetThisPage(PageNum pageNum, PF_PageHandle &pageHandle) const;
+  RC GetLastPage(PF_PageHandle &pageHandle) const;
+  RC GetPrevPage(PageNum current, PF_PageHandle &pageHandle) const;
+
+  RC AllocatePage(PF_PageHandle &pageHandle);
+  RC DisposePage(PageNum pageNum);
+  RC MarkDirty(PageNum pageNum) const;
+  RC UnpinPage(PageNum pageNum) const;
+
+  RC FlushPages() const;
+
+  RC ForcePagges(PageNum pageNum=ALL_PAGES) const;
+
+private:
+  int IsValidPageNum(PageNum pageNum) const;
+
+  PF_BufferMgr *pBufferMgr;
+  PF_FileHdr hdr;
+  int bFileOpen;
+  int bHdrChanged;
+  int unixfd;
 };
 
 class PF_Manager {
@@ -55,7 +83,12 @@ public:
   RC GetBlockSize(int &length) const;
   RC AllocateBlock(char *&buffer);
   RC DisposeBlock(char *buffer);
+
+private:
+  PF_BufferMgr *pBufferMgr;
 };
+
+void PF_PrintError(RC rc);
 
 #define PF_PAGEPINNED      (START_PF_WARN + 0) // page pinned in buffer
 #define PF_PAGENOTINBUF    (START_PF_WARN + 1) // page isn't pinned in buffer
