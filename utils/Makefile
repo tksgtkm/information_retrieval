@@ -1,19 +1,23 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -O2
 
-TARGET = utils_test
+# テスト対象ソースとヘッダ
+SRC := utils.cc configurator.cc
+HEADERS := utils.h configurator.h compression.h
 
-SRCS = utils.cc utils_test.cc
+# テストファイル
+TESTS := utils_test configurator_test
 
-OBJS = $(SRCS:.cc=.o)
+# デフォルトターゲット
+all: $(TESTS)
 
-all: $(TARGET)
+# 各テストのビルドルール
+utils_test: utils_test.cc $(SRC) $(HEADERS)
+	$(CXX) $(CXXFLAGS) -o $@ utils_test.cc $(SRC)
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+configurator_test: configurator_test.cc $(SRC) $(HEADERS)
+	$(CXX) $(CXXFLAGS) -o $@ configurator_test.cc $(SRC)
 
-%.o: %.cc
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
+# クリーン
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(TESTS)
