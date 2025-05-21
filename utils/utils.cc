@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "utils.h"
+#include "compression.h"
 
 char *chop(char *s) {
     if (s == nullptr)
@@ -76,3 +77,9 @@ char *duplicateString3(const char *s, const char *file, int line) {
     return result;
 }
 
+unsigned int simpleHashFunction(const char *string) {
+	unsigned int result = 0;
+	for (int i = 0; string[i] != 0; i++)
+		result = result * 127 + (byte)string[i];
+	return result;
+}
