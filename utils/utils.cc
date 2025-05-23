@@ -83,3 +83,12 @@ unsigned int simpleHashFunction(const char *string) {
 		result = result * 127 + (byte)string[i];
 	return result;
 }
+
+char *concatenateStrings(const char *s1, const char *s2) {
+	int len1 = strlen(s1);
+	int len2 = strlen(s2);
+	char *result = (char *)malloc(len1 + len2 + 1);
+	strcpy(result, s1);
+	strcpy(&result[len1], s2);
+	return result;
+}
