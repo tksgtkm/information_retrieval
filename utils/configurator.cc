@@ -5,6 +5,7 @@
 
 #include "configurator.h"
 #include "logging.h"
+#include "stringtokenizer.h"
 #include "utils.h"
 
 static bool configuratorInitialized = false;
@@ -128,6 +129,38 @@ static void processConfigFile(const char *fileName) {
     fclose(f);
 }
 
+void initializeConfiguratorFromCommandLineParameters(int argc, const char **argv) {
+    bool configFileGivenAsParam = false;
+    initializeConfigurator("/dev/null", "/dev/null");
+    for (int i = 1; i < argc; i++) {
+        StringTokenizer *tok = new StringTokenizer(argv[i], "=");
+        char *key = chop(tok->getNext());
+        char *value = chop(tok->getNext());
+        if ((key != nullptr) && (value != nullptr)) {
+            char *key2 = key;
+            while (*key2 == '-')
+                key2++;
+            if ((strcasecmp(key2, "CONFIG") == 0) || (strcasecmp(key2, "CONFIGFILE") == 0)) {
+                configFileGivenAsParam = true;
+                initializeConfigurator(value, "/dev/null");
+            } else {
+                addToHashTable(key2, value);
+            }
+        }
+        if (key != nullptr)
+            free(key);
+        if (value != nullptr)
+            free(value);
+        delete tok;
+    }
+    if (!configFileGivenAsParam) {
+        char *configFile = getenv("RETRIEVAL_CONFIG_FILE");
+        if (configFile != nullptr)
+            initializeConfigurator(configFile, "/dev/null");
+    }
+    initializeConfigurator();
+}
+
 void initializeConfigurator(const char *primaryFile, const char *secondaryFile) {
     if (!configuratorInitialized) {
         for (int i = 0; i < HASHTABLE_SIZE; i++) {
@@ -153,4 +186,20 @@ void initializeConfigurator() {
     }
     initializeConfigurator(primaryFile, "/etc/retrievalconf");
     free(primaryFile);
+}
+
+bool getConfigurationValue(const char *key, char *value) {
+    assert(configuratorInitialized == true);
+    if (value == nullptr)
+        return false;
+    int32_t hashValue = simpleHashFunction(key) % HASHTABLE_SIZE;
+    KeyValuePair *result = hashTable[hashValue];
+    while (result != nullptr) {
+        if (strcmp(result->key, key) == 0) {
+            strcpy(value, result->value);
+            return true;
+        }
+        result = (KeyValuePair *)result->next;
+    }
+    return false;
 }
