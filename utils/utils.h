@@ -10,4 +10,6 @@ char *duplicateString3(const char *s, const char *file, int line);
 
 unsigned int simpleHashFunction(const char *string);
 
+char *concatenateStrings(const char *s1, const char *s2);
+
 #endif
