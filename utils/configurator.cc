@@ -29,6 +29,8 @@ static const int CONFIG_VALUE_BUFFER_SIZE = MAX_CONFIG_VALUE_LENGTH + 256;
 static char *currentBuffer = nullptr;
 static int currentBufferPos = CONFIG_VALUE_BUFFER_SIZE;
 
+#define typed_malloc(type, num) (type*)malloc((num) * sizeof(type))
+
 static bool defined(char *key) {
     if (key == nullptr)
         return false;
@@ -202,4 +204,122 @@ bool getConfigurationValue(const char *key, char *value) {
         result = (KeyValuePair *)result->next;
     }
     return false;
+}
+
+bool getConfigurationInt(const char *key, int *value, int defaultValue) {
+    char string[MAX_CONFIG_VALUE_LENGTH], string2[MAX_CONFIG_VALUE_LENGTH];
+    *value = defaultValue;
+    if (!getConfigurationValue(key, string2))
+        return false;
+    if (sscanf(string2, "%s", string) < 1)
+        return false;
+    int v = 0;
+    for (int i = 0; string[i] != 0; i++) {
+        if ((string[i] < '0') || (string[i] > '9')) {
+            if (string[i + 1] != 0)
+                return false;
+            char c = (string[i] | 32);
+            if ((c != 'm') && (c != 'k') && (c != 'g'))
+                return false;
+            if (c == 'k')
+                *value = v * 1024;
+            if (c == 'm')
+                *value = v * 1024 * 1024;
+            if (c == 'g')
+                *value = v * 1024 * 1024 * 1024;
+            return true;
+        }
+        v = v * 10 + (string[i] - '0');
+    }
+    *value = v;
+    return true;
+}
+
+bool getConfigurationInt64(const char *key, int64_t *value, int64_t defaultValue) {
+    char string[MAX_CONFIG_VALUE_LENGTH], string2[MAX_CONFIG_VALUE_LENGTH];
+    *value = defaultValue;
+    if (!getConfigurationValue(key, string2))
+        return false;
+    if (sscanf(string2, "%s", string) < 1)
+        return false;
+    int64_t v = 0;
+    for (int i = 0; string[i] != 0; i++) {
+        if ((string[i] < '0') || (string[i] > '9')) {
+            if (string[i + 1] != 0)
+                return false;
+            char c = (string[i] | 32);
+            if ((c != 'm') && (c != 'k') && (c != 'g'))
+                return false;
+            if (c == 'k')
+                *value = v * 1024;
+            if (c == 'm')
+                *value = v * 1024 * 1024;
+            if (c == 'g')
+                *value = v * 1024 * 1024 * 1024;
+            return true;
+        }
+        v = v * 10 + (string[i] - '0');
+    }
+    *value = v;
+    return true;
+}
+
+bool getConfigurationBool(const char *key, bool *value, bool defaultValue) {
+    char string[MAX_CONFIG_VALUE_LENGTH];
+    *value = defaultValue;
+    if (!getConfigurationValue(key, string))
+        return false;
+    if ((strcasecmp(string, "true") == 0) || (strcmp(string, "1") == 0)) {
+        *value = true;
+        return true;
+    }
+    if ((strcasecmp(string, "false") == 0) || (strcmp(string, "0") == 0)) {
+        *value = false;
+        return true;
+    }
+    return false;
+}
+
+bool getConfigurationDouble(const char *key, double *value, double defaultValue) {
+    char string[MAX_CONFIG_VALUE_LENGTH];
+    double v;
+    *value = defaultValue;
+    if (!getConfigurationValue(key, string))
+        return false;
+    if (sscanf(string, "%lf", &v) != 1)
+        return false;
+    *value = v;
+    return true;
+}
+
+char **getConfigurationArray(const char *key) {
+    char string[MAX_CONFIG_VALUE_LENGTH];
+    if (!getConfigurationValue(key, string))
+        return nullptr;
+    int cnt = 0;
+    bool inQuotes = false;
+    for (int i = 0; string[i] != 0; i++) {
+        if (string[i] == '"')
+            inQuotes = !inQuotes;
+        if (!inQuotes)
+            cnt++;
+    }
+    if ((inQuotes) || (cnt < 1))
+        return nullptr;
+    char **result = typed_malloc(char*, cnt + 1);
+    cnt = 0;
+    int pos = 0;
+    while (string[pos] != 0) {
+        if (string[pos] == '"') {
+            int start = ++pos;
+            while (string[pos] != '"')
+                pos++;
+            string[pos++] = 0;
+            result[cnt++] = duplicateString(&string[start]);
+        } else {
+            pos++;
+        }
+    }
+    result[cnt] = nullptr;
+    return result;
 }

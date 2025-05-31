@@ -15,5 +15,17 @@ const char *Index::TEMP_DIRECTORY = "/tmp";
 const char *Index::LOG_ID = "Index";
 
 void Index::getConfiguration() {
+    getConfigurationInt64("MAX_FILE_SIZE", &MAX_FILE_SIZE, DEFAULT_MAX_FILE_SIZE);
+    if (MAX_FILE_SIZE < 32)
+        MAX_FILE_SIZE = 32;
+}
+
+Index::Index() {
+    readOnly = false;
+    shutDownInitiated = false;
+
+    getConfiguration();
+    baseDirectory[0] = 0;
+
     
 }
