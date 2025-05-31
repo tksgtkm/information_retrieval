@@ -2,6 +2,8 @@
 #define __INDEX_H
 
 #include "../utils/all.h"
+#include "index_type.h"
+#include <semaphore.h>
 
 class Index {
 
@@ -32,7 +34,7 @@ public:
 
     // ステミングレベルは０から2の間で設定可能
     static const int DEFAULT_STEMMING_LEVEL = 0;
-    configurable int STEMING_LEVEL;
+    configurable int STEMMING_LEVEL;
 
     // クエリ処理時にファイルのパーミッションを考慮すべきかどうか示す
     static const bool DEFAULT_APPLY_SECURITY_RESTRICTIONS = true;
@@ -106,18 +108,59 @@ public:
 
 public:
 
+    // このインデックスがMsterIndexのサブインデックスである場合にtrue
+    bool isSubIndex;
+
+    // TYPE_INDEX or TYPE_MASTERINDEX
+    int indexType;
+
     bool readOnly;
 
     bool shutDownInitiated;
 
+    bool isConsistent;
+
+    uid_t indexOwner;
+
+    int64_t registerdUsers[MAX_REGISTERED_USERS];
+
+    int registerdUserCount;
+
+    int64_t registrationID;
+
+    unsigned int updateOperationsPerformed;
+
+    sem_t registeredUserSemaphore;
+
+    sem_t updateSemaphore;
+
+    bool indexIsBeingUpdated;
+
+    offset usedAddressSpace, deletedAddressSpace;
+
+    double garbageThreshold, onTheFlyGarbageThreshold;
+
+    offset biggestOffsetSeenSoFar;
+
 public:
 
+    // デフォルトコンストラクタ
     Index();
+
+    /*
+    指定されたdirectory内のデータをもとにIndexインスタンスを作成する。
+    データが存在しない場合は、新しい空のインデックスが作成される。
+    ディレクトリが存在しない場合は自動的に作成される。
+    isSubIndexがtrueの場合、それはこのインデックスがシステム全体のMasterIndexの子であることを意味する
+    サブインデックスである場合、自身で接続デーモンを持つことはできない
+    */
+    Index(const char *directory, bool isSubIndex);
 
     virtual ~Index();
 
 protected:
 
+    // 設定マネージャから構成情報を取得する
     virtual void getConfiguration();
 };
 
