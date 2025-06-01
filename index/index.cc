@@ -109,6 +109,107 @@ Index::Index(const char *directory, bool isSubIndex) {
 
     this->directory = duplicateString(directory);
     char *fileName = evaluateRelativePathName(directory, INDEX_WORKFILE);
+
+    struct stat fileInfo;
+    if (lstat(fileName, &fileInfo) == 0) {
+        loadDataFromDisk();
+        if (!isConsistent) {
+            snprintf(errorMessage, sizeof(errorMessage),
+                    "On-disk index found in inconsistent state: %s. Creating new index.", directory);
+            log(LOG_ERROR, LOG_ID, errorMessage);
+            DIR *dir = opendir(directory);
+            struct dirent *child;
+            while ((child = readdir(dir)) != nullptr) {
+                if (child->d_name[0] == '.')
+                    continue;
+                char *fn = evaluateRelativePathName(directory, child->d_name);
+                struct stat buf;
+                if (lstat(fn, &buf) == 0) {
+                    if ((buf.st_mode & 0777) == DEFAULT_FILE_PERMISSIONS) {
+                        if ((S_ISLNK(buf.st_mode)) || (S_ISREG(buf.st_mode)) || (S_ISFIFO(buf.st_mode)))
+                            unlink(fn);
+                    }
+                }
+                free(fn);
+            }
+            closedir(dir);
+        }
+    }
+
+    bool createFromScrach;
+    if (lstat(fileName, &fileInfo) == 0) {
+        loadDataFromDisk();
+        createFromScrach = false;
+    } else {
+        if (readOnly) {
+            log(LOG_ERROR, LOG_ID, "Cannot create new index while in read-only mode.");
+            exit(1);
+        }
+
+        updateOperationsPerformed = 0;
+        isConsistent = true;
+        int fd = open(fileName, O_RDWR | O_CREAT | O_TRUNC | O_LARGEFILE, DEFAULT_FILE_PERMISSIONS);
+        if (fd < 0) {
+            snprintf(errorMessage, sizeof(errorMessage), "Unable to create index: %s", fileName);
+            log(LOG_ERROR, LOG_ID, errorMessage);
+            assert(fd >= 0);
+        }
+        close(fd);
+        createFromScrach = true;
+    }
+    
 }
 
-Index::~Index() {}
+Index::~Index() {
+    bool mustReleaseLock;
+
+    shutDownInitiated = true;
+
+
+}
+
+void Index::loadDataFromDisk() {
+    char *fileName = evaluateRelativePathName(directory, INDEX_WORKFILE);
+    FILE *f = fopen(fileName, "r");
+    free(fileName);
+    if (f == nullptr) {
+        snprintf(errorMessage, sizeof(errorMessage), "Unable to open index: %s", fileName);
+        log(LOG_ERROR, LOG_ID, errorMessage);
+        exit(1);
+    }
+    char line[1024];
+    STEMMING_LEVEL = -1;
+    while (fgets(line, 1022, f) != nullptr) {
+        if (strlen(line) > 1) {
+            while (line[strlen(line) - 1] == '\n')
+                line[strlen(line) - 1] = 0;
+        }
+        if (startsWith(line, "STEMMING_LEVEL = "))
+            sscanf(&line[strlen("STEMMING_LEVEL = ")], "%d", &STEMMING_LEVEL);
+        if (startsWith(line, "BIGRAM_INDEXING = "))
+            BIGRAM_INDEXING = (strcasecmp(&line[strlen("BIGRAM_INDEXING = ")], "true") == 0);
+        if (startsWith(line, "UPDATE_OPERATORS = "))
+            sscanf(&line[strlen("UPDATE_OPERATIONS = ")], "%d", &updateOperationsPerformed);
+        if (startsWith(line, "IS_CONSISTENT = ")) {
+            if (strcasecmp(&line[strlen("IS_CONSISTENT = ")], "true") == 0)
+                isConsistent = true;
+            else if (strcasecmp(&line[strlen("IS_CONSISTENT = ")], "false") == 0)
+                isConsistent = false;
+        }
+        if (startsWith(line, "DOCUMENT_LEVEL_INDEXING = "))
+            sscanf(&line[strlen("DOCUMENT_LEVEL_INDEXING = ")], "%d", &DOCUMENT_LEVEL_INDEXING);
+        if (startsWith(line, "USED_ADDRESS_SPACE = "))
+            sscanf(&line[strlen("USED_ADDRESS_SPACE = ")], OFFSET_FORMAT, &usedAddressSpace);
+        if (startsWith(line, "DELETED_ADDRESS_SPACE = "))
+            sscanf(&line[strlen("DELETED_ADDRESS_SPACE = ")], OFFSET_FORMAT, &usedAddressSpace);
+        if (startsWith(line, "BIGGEST_OFFSET = "))
+            sscanf(&line[strlen("BIGGEST_OFFSET = ")], OFFSET_FORMAT, &usedAddressSpace);
+    }
+    if ((STEMMING_LEVEL < 0) || (STEMMING_LEVEL > 3)) {
+        snprintf(errorMessage, sizeof(errorMessage),
+                "Illegal configurate values in index file: %s", directory);
+        log(LOG_ERROR, LOG_ID, errorMessage);
+        exit(1);
+    }
+    fclose(f);
+}

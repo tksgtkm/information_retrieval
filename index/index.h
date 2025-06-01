@@ -162,6 +162,9 @@ protected:
 
     // 設定マネージャから構成情報を取得する
     virtual void getConfiguration();
+
+    // マスターインデックスファイルからインデックス情報を読み取る
+    void loadDataFromDisk();
 };
 
 #endif

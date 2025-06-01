@@ -21,6 +21,8 @@ unsigned int simpleHashFunction(const char *string);
 
 char *concatenateStrings(const char *s1, const char *s2);
 
+bool startsWith(const char *longString, const char *shortString, bool caseSensitive = true);
+
 char *evaluateRelativePathName(const char *dir, const char *file);
 
 #endif
