@@ -92,3 +92,25 @@ char *concatenateStrings(const char *s1, const char *s2) {
 	strcpy(&result[len1], s2);
 	return result;
 }
+
+bool startsWith(const char *longString, const char *shortString, bool caseSensitive) {
+	if ((longString == nullptr) || (shortString == nullptr))
+		return false;
+	int len = strlen(shortString);
+	if (caseSensitive)
+		return (strncmp(longString, shortString, len) == 0);
+	else
+		return (strncasecmp(longString, shortString, len) == 0);
+}
+
+char *evaluateRelativePathName(const char *dir, const char *file) {
+	int dirLen = strlen(dir);
+	if (file[0] == '/')
+		file++;
+	int fileLen = strlen(file);
+	int toallLen = dirLen + fileLen + 4;
+	char *result = (char*)malloc(toallLen);
+	sprintf(result, "%s%s%s", dir, (dir[dirLen - 1] == '/' ? "" : "/"), file);
+	collapsePath(result);
+	return result;
+}
