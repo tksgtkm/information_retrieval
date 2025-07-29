@@ -60,6 +60,8 @@ private:
     int cacheDirID;
     char caccheDirName[256];
 
+    char mountPoint[256];
+
     int32_t directoryCount;
 
     int32_t directorySlotsAllocated;
@@ -83,6 +85,14 @@ private:
     int32_t iNodeSlotsAllocated;
 
     int32_t biggestINodeID;
+
+    offset biggestOffset;
+
+    offset addressSpaceCovered;
+
+    AddressSpaceChange *transactionLog;
+
+    int transactionLogSize, transactionLogAllocated;
 
 public:
 
