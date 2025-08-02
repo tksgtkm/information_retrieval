@@ -33,7 +33,7 @@ typedef struct DicrectoryContent {
     int32_t longAllocated;
 
     /* ロングリスト本体 */
-    DC_ChildSlot *logList;
+    DC_ChildSlot *longList;
 
     /* ソート済みリストにまだ統合されていない追加済みの子の数 */
     int16_t shortCount, shortSlotsAllocated;

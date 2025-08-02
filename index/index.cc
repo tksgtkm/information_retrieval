@@ -157,6 +157,8 @@ Index::Index(const char *directory, bool isSubIndex) {
         close(fd);
         createFromScrach = true;
     }
+
+    // TODO FileManager実装から
     
 }
 
