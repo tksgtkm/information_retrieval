@@ -16,6 +16,7 @@ static const int MAX_INT = 0x7FFFFFFF;
 static const offset ONE = 1;
 static const offset TWO = 2;
 
+// 初期ファイルの権限(インデックスファイルが作られたときに使う)
 static const mode_t DEFAULT_FILE_PERMISSIONS = S_IWUSR | S_IRUSR | S_IRGRP;
 
 #endif
