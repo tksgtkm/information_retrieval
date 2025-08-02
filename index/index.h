@@ -114,32 +114,62 @@ public:
     // TYPE_INDEX or TYPE_MASTERINDEX
     int indexType;
 
+    // このインデックスが読み取り専用か示す
     bool readOnly;
 
     bool shutDownInitiated;
 
+    /*
+    このインデックスがディスク上のイメージが一貫した状態にあるかどうかを示す
+    これを使ってディスク上のインデックスを読み込むか、
+    それともコンストラクタ内で新しいインデックスを作るか判断する
+    */
     bool isConsistent;
 
+    /*
+    プロセスを開始したユーザーのUID
+    このユーザー(およびスーパーユーザー)がインデックスへの完全な
+    アクセス権を持つと仮定する。
+    それ以外のユーザーに対してはsecurityManagerによって結果がフィルタリングされる。
+    */
     uid_t indexOwner;
 
+    // インデックスに登録されているユーザーのリスト
     int64_t registerdUsers[MAX_REGISTERED_USERS];
 
+    // 登録されているユーザーの数
     int registerdUserCount;
 
+    // Queryインスタンスに一意のユーザーIDを与えるためのカウンター
     int64_t registrationID;
 
+    // コンテンツの更新操作(WRITE UNLINK)が行われた回数をカウントする
     unsigned int updateOperationsPerformed;
 
+    // 初期値としてMAX_REGISTERED_USERSを設定し、その後PとVを行う
     sem_t registeredUserSemaphore;
 
+    // 同時に実行できる更新操作の数を1に制限するために使用される
     sem_t updateSemaphore;
 
+    /*
+    このフラグは、現在更新クエリが処理中かどうかを判定するために使用される
+    もし処理中ならば最初のクエリが終了するまで他の更新クエリの実行は遅延される
+    */
     bool indexIsBeingUpdated;
 
+    // ガベージコレクションをトリガーするために使用される
     offset usedAddressSpace, deletedAddressSpace;
 
+    // ガベージコレクションのしきい値
     double garbageThreshold, onTheFlyGarbageThreshold;
 
+    /*
+    これまでに遭遇した最大のオフセット値
+    これによりnotifyOfAddressSpaceChangeの操作が実際にポスティングを削除したのか
+    それともインデックス作成プロセス中のアドレス空間の過剰な割当てを調査しただけか
+    判断することができる
+    */
     offset biggestOffsetSeenSoFar;
 
 public:

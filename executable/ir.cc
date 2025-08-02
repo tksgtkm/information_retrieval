@@ -30,11 +30,15 @@ int main(int argc, char **argv) {
     for (int i = 1; i < argc; i++)
         processParameter(argv[i]);
 
+    // インデックスディレクトリがしていされているか確認(設定ファイルかコマンドライン)
     if (!getConfigurationValue("DIRECTORY", workDir)) {
         fprintf(stderr, "ERROR: No directory specified. Check .irconf file or give directory as command-line parameter.\n\n");
         exit(1);
     }
 
+    // 複数のインデックスがあるか確認する
+    // 複数のインデックスディレクトリがある場合は通常にIndexインスタンスではなく、
+    // MasterIndexを作成する
     if (strchr(workDir, ',') != nullptr) {
         char *dirs[100];
         int indexCount = 0;

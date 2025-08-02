@@ -32,11 +32,13 @@ public:
     bool startupOk;
 
 protected:
-
+    // システム全体のアクテティブなマウントの数
     int activeMountCount;
 
+    // アクティブなマウントのパス名　空のスロットはNULLを指す
     char *mountPoints[MAX_MOUNT_COUNT];
 
+    // 動かしているインデックスインスタンスの数
     int indexCount;
 
 
